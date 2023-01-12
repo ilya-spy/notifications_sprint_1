@@ -1,0 +1,73 @@
+version: '3.5'
+
+networks:
+  yp_network:
+    name: yp_network
+    external: true
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    container_name: kafka
+    env_file:
+      - ../../kafka/.env
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - yp_network
+
+  zookeeper:
+    image: zookeeper:3.5
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+      - "2888:2888"
+    networks:
+      - yp_network
+
+  etl:
+    build:
+      context: ../../..
+      dockerfile: devops/docker/etl/Dockerfile
+    command: ["python", "etl/entrypoint.py"]
+    networks:
+      - yp_network
+    env_file:
+      - ../../clickhouse/.env
+    depends_on:
+      - kafka
+    ports:
+      - "8000:8000"
+    restart: on-failure
+
+  performance-test:
+    build:
+      context: ../../..
+      dockerfile: devops/docker/etl/Dockerfile
+    command: [ "python", "analytics_kafka.py" ]
+    networks:
+      - yp_network
+    env_file:
+      - ../../clickhouse/.env
+    depends_on:
+      - kafka
+    restart: on-failure
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    hostname: etl-ui
+    container_name: etl-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_NAME: kafka
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2888
+    depends_on:
+      - zookeeper
+      - kafka
+    networks:
+      - yp_network

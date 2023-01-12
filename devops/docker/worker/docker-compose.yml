@@ -1,0 +1,25 @@
+version: '3.5'
+
+networks:
+  yp_network:
+    name: yp_network
+    external: true
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-node1
+    hostname: kafka-node1
+    env_file:
+      - ../../kafka/.env
+    depends_on:
+      - zookeeper
+    networks:
+      - yp_network
+
+  zookeeper:
+    image: zookeeper:3.5
+    container_name: kafka-zookeeper
+    hostname: kafka-zookeeper
+    networks:
+      - yp_network

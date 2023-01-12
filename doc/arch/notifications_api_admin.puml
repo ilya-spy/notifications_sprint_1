@@ -1,0 +1,65 @@
+@startuml "Notifications admin module"
+!theme toy
+'''Часть сервиса уведомлений, отвечающая за создание и администрирование нотификаций'''
+
+
+'''Хранилища и внешние сервисы'''
+cloud "notifications: Storage" {
+    database "notifications: postgres" {
+        [Notifications config]
+    }
+}
+
+
+'''Компоненты бизнес-логики'''
+component "frontend: Service" {
+    'Внешние интерфейсы службы'
+    portin frontend.http
+
+    'Компоненты службы'
+    [Nginx]
+    [FastAPI]
+
+    'Внутренние каналы службы'
+    [Nginx] <--> "FastAPI": Proxy
+
+    'Обслуживание внешних интерфейсы'
+    frontend.http <--> Nginx: GET,POST
+}
+
+component "admin: Service" {
+    'Внешние интерфейсы службы'
+    portin admin.http
+    port   sender.http
+    port   sender.websock
+
+    'Компоненты службы'
+    [Django]
+    [Templates engine]
+    [URL shortener]
+
+    'Хранилища\кэши службы'
+    database "admin: postgres" {
+        [Django config]
+        [Jinja templates]
+    }
+
+    'Внутренние каналы службы'
+    [Django] ..>      [Django config]: postgres.rw
+    [Django] <-left-> [Templates engine]
+    [Templates engine] --> [URL shortener]
+    [Templates engine] ..> [Jinja templates]: postgres.rw
+
+    'Обслуживание внешних интерфейсов'
+    admin.http <--> [Django]: GET,POST
+    sender.http <--  [Django]: POST
+    sender.websock  <--> [Django]: Session
+}
+
+
+'''Обслуживание внешних и облачных сервисов'''
+[FastAPI]  ..> [Notifications config]: postgres.rw
+[FastAPI] <--> admin.http: GET,POST
+[Django]   ..> [Notifications config]: postgres.rw
+
+@enduml

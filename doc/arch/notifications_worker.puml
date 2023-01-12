@@ -1,0 +1,59 @@
+@startuml "Notifications worker module"
+!theme toy
+'''Часть сервиса уведомлений, отвечающая за доставку уведомлений в каналы распространения''
+
+
+'''Хранилища и внешние сервисы'''
+cloud "notifications: Queue" {
+    database "rabbitmq" {
+        [Realtime queue]
+        [Background queue]
+    }
+}
+
+cloud "notifications: Storage" {
+    database "postgres" {
+        [Notifications config]
+
+    }
+}
+
+
+'''Компоненты бизнес-логики'''
+component "Worker: Service" {
+    'Внешние интерфейсы службы'
+    portin rabbit.queue
+    portin postgres.rw
+
+    'Компоненты службы'
+    [Queue Manager]
+    note top of [Queue Manager]: Delivery & rate-limiting
+
+    [Policy Manager]
+    note top of [Policy Manager]: Pre-send policy checks
+
+    package "Workers" {
+        [Controller]
+        [Email Worker]
+        [Push Worker]
+    }
+
+    'Внутренние каналы службы'
+    [Queue Manager] --> [Controller]
+    [Queue Manager] <-> [Policy Manager]
+
+    [Controller] --> [Email Worker]
+    [Controller] --> [Push Worker]
+
+    'Обслуживание внешних интерфейсы'
+    rabbit.queue -->  [Queue Manager]
+    postgres.rw  <--  [Policy Manager]
+}
+
+
+'''Обслуживание внешних и облачных сервисов'''
+[Background queue] ..> rabbit.queue
+[Realtime queue]   ..> rabbit.queue
+[Notifications config] ..> postgres.rw
+
+@enduml

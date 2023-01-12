@@ -1,0 +1,70 @@
+@startuml "Notifications sender module"
+!theme toy
+'''Часть сервиса уведомлений, отвечающая за создание и администрирование нотификаций'''
+
+
+'''Хранилища и внешние сервисы'''
+cloud "notifications: Storage" {
+    database "postgres" {
+        [Notifications config]
+
+    }
+}
+
+cloud "notifications: Queue" {
+    database "rabbitmq" {
+        [Realtime queue]
+        [Background queue]
+    }
+}
+
+cloud "notifications: Archive" {
+    database "kafka" {
+        [Notifications history]
+    }
+}
+
+
+'''Компоненты бизнес-логики'''
+component "Scheduler: Service" {
+    'Компоненты службы'
+    [Cron launcher]
+}
+
+component "Sender: Service" {
+    'Внешние интерфейсы службы'
+    portin sender.websock
+    portin sender.http
+
+    portout rabbit.queue
+    portout kafka.archive
+
+    'Компоненты службы'
+    [Realtime Sender]
+    [Background Sender]
+    [Archiver]
+
+    'Внутренние каналы службы'
+
+    'Обслуживание внешних интерфейсы'
+    sender.http --> [Background Sender]: POST
+    sender.http --> [Archiver]: POST
+    sender.http <-- [Realtime Sender]: POST
+
+    sender.websock <--> [Realtime Sender]: Session
+
+    [Archiver] --> kafka.archive
+    [Realtime Sender] --> rabbit.queue
+    [Background Sender] --> rabbit.queue
+}
+
+
+'''Обслуживание внешних и облачных сервисов'''
+[Cron launcher] .> [Notifications config]
+[Cron launcher] <--> sender.http: GET,POST
+
+kafka.archive ..>  [Notifications history]
+rabbit.queue ..> [Background queue]
+rabbit.queue ..> [Realtime queue]
+
+@enduml

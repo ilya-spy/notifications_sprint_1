@@ -1,0 +1,35 @@
+@startuml
+
+'https://plantuml.com/use-case-diagram'
+skinparam actorStyle awesome
+
+
+actor Manager
+actor Client
+
+
+package "Notification API" {
+    "Like or repost" as (Reaction)
+    "Schedule or send notification" as (Notification)
+    component "Configure API" as config_api
+}
+
+'''Это черновик, дальше UGC убрать и заменить на Admin Panel"
+package "Admin Panel" {
+    component FastAPI as ugc_gate
+    database Kafka as ugc_kafka
+    component ETL as ugc_etl
+    database ClickHouse as ugc_clickhouse
+}
+
+
+Client ..> (Reaction)
+Client ..> (Notification)
+
+Manager ..> (Notification)
+ugc_gate --> ugc_kafka: save events
+ugc_kafka <-- ugc_etl: extract events
+ugc_etl --> ugc_clickhouse: upload events
+Client <..> ugc_gate
+
+@enduml
