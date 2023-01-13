@@ -24,13 +24,12 @@ component "Worker: Service" {
     'Внешние интерфейсы службы'
     portin rabbit.queue
     portin postgres.rw
+    portout admin.http
 
     'Компоненты службы'
     [Queue Manager]
-    note top of [Queue Manager]: Delivery & rate-limiting
+    note right of [Queue Manager]: Delivery & rate-limiting
 
-    [Policy Manager]
-    note top of [Policy Manager]: Pre-send policy checks
 
     package "Workers" {
         [Controller]
@@ -38,9 +37,18 @@ component "Worker: Service" {
         [Push Worker]
     }
 
+    package "Async Sub-Service" {
+        [Policy Manager]
+        note bottom of [Policy Manager]: Pre-send policy checks
+
+        [Enricher]
+        note bottom of [Enricher]: Final content personalization
+    }
+
     'Внутренние каналы службы'
     [Queue Manager] --> [Controller]
     [Queue Manager] <-> [Policy Manager]
+    [Queue Manager] <-> [Enricher]
 
     [Controller] --> [Email Worker]
     [Controller] --> [Push Worker]
@@ -48,12 +56,14 @@ component "Worker: Service" {
     'Обслуживание внешних интерфейсы'
     rabbit.queue -->  [Queue Manager]
     postgres.rw  <--  [Policy Manager]
+    
+    [Enricher] <-> admin.http
 }
 
 
 '''Обслуживание внешних и облачных сервисов'''
 [Background queue] ..> rabbit.queue
 [Realtime queue]   ..> rabbit.queue
-[Notifications config] ..> postgres.rw
+[Notifications config] .down.> postgres.rw
 
 @enduml

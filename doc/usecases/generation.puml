@@ -1,0 +1,53 @@
+@startuml "message generation flow"
+
+'https://plantuml.com/use-case-diagram'
+skinparam actorStyle awesome
+!theme toy
+
+
+actor Manager
+actor AdminAPI
+
+
+package "Admin API" {
+    "Send immediate notification" as (Notification)
+    "Store personal data and reactions\nDjango Users Table" as (Account)
+    "Ask to generate HTML body with fields from Django Admin UI" as (Templater)
+}
+
+package "Sender Service" {
+    "Schedule and async run background preparations" as (Bg)
+    "Ask templater to:\n Run db get batch\n Fill-in common arguments (new releases, top10,)" as (Fill-1)
+    "Send partially filled template as message body to rabbitmq" as (Send)
+
+    note right of (Fill-1): Enricher in Sender
+}
+
+package "Worker Service" {
+    "Extract partially filled template and personalize\nfor each user in send batch" as (Extract)
+    "Ask templater to:\n Run db query uid\n fill personal data from que(first name, location,)" as (Fill-2)
+
+    note left of (Fill-2): Enricher in Worker
+    note bottom of (Fill-2): Final message generated in 2 stages\n By exchanging partially-filled-in HTML templates
+
+}
+
+
+User ..> (Account)
+User ..> (Notification)
+
+Manager ..> (Notification)
+Manager ..> (Templater)
+
+(Templater) --> (Bg)
+(Bg) --> (Fill-1)
+(Fill-1) --> (Send)
+(Notification) --> (Send)
+
+(Send) --> (Extract)
+(Extract) --> (Fill-2)
+
+(Fill-1) ..> AdminAPI
+(Fill-2) .> AdminAPI
+
+@enduml
