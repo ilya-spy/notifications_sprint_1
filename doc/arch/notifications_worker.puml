@@ -24,7 +24,7 @@ component "Worker: Service" {
     'Внешние интерфейсы службы'
     portin rabbit.queue
     portin postgres.rw
-    portout admin.http
+    portout generator.http
 
     'Компоненты службы'
     [Queue Manager]
@@ -42,7 +42,7 @@ component "Worker: Service" {
         note bottom of [Policy Manager]: Pre-send policy checks
 
         [Enricher]
-        note bottom of [Enricher]: Final content personalization
+        note bottom of [Enricher]: Final content personalization\nIndividually per each message sent
     }
 
     'Внутренние каналы службы'
@@ -57,7 +57,7 @@ component "Worker: Service" {
     rabbit.queue -->  [Queue Manager]
     postgres.rw  <--  [Policy Manager]
     
-    [Enricher] <-> admin.http
+    [Enricher] -up-> generator.http
 }
 
 
