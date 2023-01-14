@@ -6,13 +6,16 @@ skinparam actorStyle awesome
 
 
 actor Manager
-actor AdminAPI
+actor User
 
+
+package "Templates & UGC API" {
+    "Store personal data and reactions\nDjango users table" as (Account)
+    "Store templates and notifications\nDjango templates table" as (Storage)
+}
 
 package "Admin API" {
-    "Send immediate notification" as (Notification)
-    "Store personal data and reactions\nDjango Users Table" as (Account)
-    "Ask to generate HTML body with fields from Django Admin UI" as (Templater)
+    "Ask to schedule template body send\nfields from Django Admin UI" as (Templater)
 }
 
 package "Sender Service" {
@@ -34,12 +37,11 @@ package "Worker Service" {
 
 
 User ..> (Account)
-User ..> (Notification)
 
-Manager ..> (Notification)
 Manager ..> (Templater)
+Manager ..> (Storage)
 
-(Templater) --> (Bg)
+(Templater) -> (Bg)
 (Bg) --> (Fill-1)
 (Fill-1) --> (Send)
 (Notification) --> (Send)
@@ -47,7 +49,8 @@ Manager ..> (Templater)
 (Send) --> (Extract)
 (Extract) --> (Fill-2)
 
-(Fill-1) ..> AdminAPI
-(Fill-2) .> AdminAPI
+(Fill-1) ..> (Storage)
+(Fill-1) ..> (Account)
+(Fill-2) ..> (Account)
 
 @enduml
