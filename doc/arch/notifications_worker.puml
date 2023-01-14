@@ -24,7 +24,6 @@ component "Worker: Service" {
     'Внешние интерфейсы службы'
     portin rabbit.queue
     portin postgres.rw
-    portout generator.http
 
     'Компоненты службы'
     [Queue Manager]
@@ -47,15 +46,15 @@ component "Worker: Service" {
 
     'Внутренние каналы службы'
     [Queue Manager] --> [Controller]
-    [Queue Manager] <-> [Policy Manager]
-    [Queue Manager] <-> [Enricher]
+    [Queue Manager] <--> [Policy Manager]
+    [Queue Manager] <--> [Enricher]
 
     [Controller] --> [Email Worker]
     [Controller] --> [Push Worker]
 
     'Обслуживание внешних интерфейсы'
     rabbit.queue -->  [Queue Manager]
-    postgres.rw  <--  [Policy Manager]
+    postgres.rw  <..  [Policy Manager]
     
     [Enricher] -up-> generator.http
 }
@@ -64,6 +63,6 @@ component "Worker: Service" {
 '''Обслуживание внешних и облачных сервисов'''
 [Background queue] ..> rabbit.queue
 [Realtime queue]   ..> rabbit.queue
-[Notifications config] .down.> postgres.rw
+[Notifications config] ..> postgres.rw
 
 @enduml

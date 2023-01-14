@@ -33,6 +33,7 @@ component "Scheduler: Service" {
 
 component "Sender: Service" {
     'Внешние интерфейсы службы'
+    port sender.websock
     port sender.http
     
     port kafka.archive
@@ -40,26 +41,25 @@ component "Sender: Service" {
 
     'Компоненты службы'
     [Enricher]
-    note right of [Enricher]:  Batch DB requests to admin\n(weekly likes, daily posts, etc..)\nPrepared content gets send as rabbit message body
+    note right of [Enricher]:  HTML request to generator\n(weekly likes, daily posts, etc..)\nPrepared content gets send as rabbit message body
     [Realtime Sender]
     [Background Sender]
     [Archiver]
 
     'Внутренние каналы службы'
-    [Background Sender] <--> [Enricher]
+    [Realtime Sender] <--> [Enricher]
 
     'Обслуживание внешних интерфейсы'
-    sender.http --> [Background Sender]: POST
-    sender.http --> [Realtime Sender]: POST
-    admin.http  <- [Enricher]: GET
+    sender.http -->  [Background Sender]: POST
+    sender.http -->  [Archiver]: POST
+    sender.http <--> [Realtime Sender]
+    generator.http  <-   [Enricher]: GET
 
     sender.websock --> [Realtime Sender]: Session
 
     [Archiver] --> kafka.archive
     [Realtime Sender] --> rabbit.queue: realtime
     [Background Sender] --> rabbit.queue: background
-    [Background Sender] -> [Archiver]: POST
-
 }
 
 
