@@ -47,7 +47,6 @@ component "Sender: Service" {
     [Archiver]
 
     'Внутренние каналы службы'
-    [Realtime Sender] <--> [Enricher]
     [Background Sender] <--> [Enricher]
 
     'Обслуживание внешних интерфейсы'
