@@ -33,7 +33,6 @@ component "Scheduler: Service" {
 
 component "Sender: Service" {
     'Внешние интерфейсы службы'
-    port sender.websock
     port sender.http
     
     port kafka.archive
@@ -51,15 +50,16 @@ component "Sender: Service" {
 
     'Обслуживание внешних интерфейсы'
     sender.http --> [Background Sender]: POST
-    sender.http --> [Archiver]: POST
     sender.http --> [Realtime Sender]: POST
     admin.http  <- [Enricher]: GET
 
-    sender.websock <--> [Realtime Sender]: Session
+    sender.websock --> [Realtime Sender]: Session
 
     [Archiver] --> kafka.archive
     [Realtime Sender] --> rabbit.queue: realtime
     [Background Sender] --> rabbit.queue: background
+    [Background Sender] -> [Archiver]: POST
+
 }
 
 

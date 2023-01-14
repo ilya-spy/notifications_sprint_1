@@ -29,37 +29,47 @@ component "frontend: Service" {
 
 component "admin: Service" {
     'Внешние интерфейсы службы'
-    portin admin.http
-    port   sender.http
-    port   sender.websock
+    port generator.http
+    port admin.http
+    port sender.http
+    port sender.websocket
 
     'Компоненты службы'
     [Django]
-    [Templates engine]
-    [URL shortener]
 
     'Хранилища\кэши службы'
     database "admin: postgres" {
         [Django config]
+        [User info]
         [Jinja templates]
     }
 
     'Внутренние каналы службы'
-    [Django] ..>      [Django config]: postgres.rw
-    [Django] <-left-> [Templates engine]
-    [Templates engine] --> [URL shortener]
-    [Templates engine] ..> [Jinja templates]: postgres.rw
+    [Django] ..> [Django config]: postgres.rw
+    [Django] ..> [User info]: postgres.rw
+
 
     'Обслуживание внешних интерфейсов'
-    admin.http <--> [Django]: GET,POST
-    sender.http <--  [Django]: POST
-    sender.websock  <--> [Django]: Session
+    admin.http -> [Django]
+    sender.http <-- [Django]: Request
+    sender.websocket <-- [Django]: Session
+    generator.http  <--> [Django]
+}
+
+component "generator: Service" {
+    [Templates engine]
+    [URL shortener]
+
+    [Templates engine] ..> [Jinja templates]: postgres.rw
+    [Templates engine] --> [URL shortener]
+
 }
 
 
 '''Обслуживание внешних и облачных сервисов'''
-[FastAPI]  ..> [Notifications config]: postgres.rw
-[FastAPI] <--> admin.http: GET,POST
-[Django]   ..> [Notifications config]: postgres.rw
+[FastAPI]   ..>  [Notifications config]: postgres.rw
+[Django]    ..>  [Notifications config]: postgres.rw
 
+[FastAPI] --> admin.http:GET,POST
+[Templates engine] <--> generator.http 
 @enduml
