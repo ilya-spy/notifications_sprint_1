@@ -1,0 +1,52 @@
+version: '3.5'
+
+# в окружении разработчика стенд использует локальные службы rabbit и postgres
+# dev окружение самодостаточно для stand-alone тестирования
+
+services:
+    worker-chunker:
+      depends_on:
+        - worker-db
+        - worker-rabbitmq
+        - ../../src/:/usr/src
+        - ../../lib/:/usr/lib
+
+    worker-enricher:
+      depends_on:
+        - worker-db
+        - worker-rabbitmq
+        - ../../src/:/usr/src
+        - ../../lib/:/usr/lib
+
+    worker-mailer:
+      depends_on:
+        - worker-db
+        - worker-rabbitmq
+      volumes:
+        - ../../src/:/usr/src
+        - ../../lib/:/usr/lib
+
+    worker-db:
+      container_name: worker-db
+      image: postgres:12.0-alpine
+      ports:
+        - 5432:5432
+      volumes:
+        - postgres_data:/var/lib/postgresql/data/
+      env_file:
+        - devops/postgres/.env
+
+    worker-rabbitmq:
+      container_name: worker-rabbitmq
+      image: rabbitmq:3.10.5-management-alpine
+      ports:
+        - 5672:5672
+        - 15672:15672
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq/
+      env_file:
+        - devops/rabbit/.env
+
+volumes:
+    postgres_data:
+    rabbitmq_data:

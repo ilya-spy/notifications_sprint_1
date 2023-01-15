@@ -18,58 +18,58 @@ help:
 
 
 #
-# Команды развёртывания UGC стенда (все сервисы вместе, ниже есть команды для запуска компонент по отдельности)
+# Команды развёртывания полного Notifications стенда
+# (все сервисы вместе, ниже есть команды для запуска отдыльных сервисов)
 #
-ugc/dev/setup:
-	make clickhouse/dev/setup
-	make kafka/dev/setup
-	make gate/dev/setup
-.PHONY: ugc/dev/setup
+notifications/prod/setup:
+	make admin/prod/setup
+	make sender/prod/setup
+	make worker/prod/setup
+.PHONY: notifications/prod/setup
 
-ugc/dev/teardown:
-	make gate/dev/teardown
-	make kafka/dev/teardown
-	make clickhouse/dev/teardown
-.PHONY: ugc/dev/teardown
+notifications/prod/teardown:
+	make worker/prod/teardown
+	make sender/prod/teardown
+	make admin/prod/teardown
+.PHONY: notifications/prod/teardown
+
 
 #
-# Команды развертывания и доступа в кластер ClickHouse
+# Команды развертывания и доступа в службы worker
 #
-clickhouse/%: export DOCKER_DIR := devops/docker/clickhouse
+worker/%: export DOCKER_DIR := devops/worker
 
-clickhouse/dev/%: export DOCKER_TARGET := dev
-clickhouse/prod/%: export DOCKER_TARGET := prod
+worker/dev/%: export DOCKER_TARGET := dev
+worker/prod/%: export DOCKER_TARGET := prod
 
-clickhouse/dev/setup:
+worker/mailer:
+	@docker exec -it worker-mailer bash
+
+
+#
+# Шаблоны-команды для запуска и остановки сервисов через docker-composer
+#
+%/dev/setup:
 	@make docker/prepare
 	@make docker/setup
-.PHONY: clickhouse/dev/setup
+.PHONY: worker/dev/setup
 
-clickhouse/prod/setup:
+%/prod/setup:
 	@make docker/prepare
 	@make docker/setup
-.PHONY: clickhouse/prod/setup
+.PHONY: worker/prod/setup
 
-clickhouse/dev/teardown:
+%/dev/teardown:
 	@make docker/prepare
 	@make docker/destroy
-.PHONY: clickhouse/teardown/dev
+.PHONY: worker/teardown/dev
 
-clickhouse/prod/teardown:
+%/prod/teardown:
 	@make docker/prepare
 	@make docker/destroy
-.PHONY: clickhouse/prod/teardown
+.PHONY: worker/prod/teardown
 
-clickhouse/docker/admin:
-	@docker exec -it clickhouse-admin bash
-clickhouse/docker/node1:
-	@docker exec -it clickhouse-node1 bash
-clickhouse/docker/node2:
-	@docker exec -it clickhouse-node2 bash
-clickhouse/docker/node3:
-	@docker exec -it clickhouse-node3 bash
-clickhouse/docker/node4:
-	@docker exec -it clickhouse-node4 bash
+
 
 
 #
@@ -197,8 +197,10 @@ docker/destroy:
 #
 #  Команды настройки локального девелопмент окружения
 #
-pipenv/setup:
-	pipenv install -r devops/clickhouse/requirements/base.txt
-	pipenv install -r devops/gate/requirements/base.txt
-	pipenv install -r devops/etl/requirements/base.txt
-	pipenv install -r devops/mongo/requirements/base.txt
+pipenv/%:
+	find devops -name 'base.txt' | xargs -I {} sh -c 'pipenv install -r $${1}' -- {}
+pipenv/dev/setup:
+	find devops -name 'dev.txt' | xargs -I {} sh -c 'pipenv install -r $${1}' -- {}
+pipenv/prod/setup:
+	find devops -name 'prod.txt' | xargs -I {} sh -c 'pipenv install -r $${1}' -- {}
+

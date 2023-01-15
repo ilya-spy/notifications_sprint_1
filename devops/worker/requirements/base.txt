@@ -1,0 +1,6 @@
+sendgrid==6.9.7
+pika==1.2.1
+pydantic==1.9.1
+backoff==2.1.2
+more-itertools==8.13.0
+requests==2.28.0
