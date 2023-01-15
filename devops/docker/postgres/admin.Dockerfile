@@ -1,0 +1,7 @@
+FROM postgres:15.1-alpine
+
+ENV POSTGRES_PASSWORD ${POSTGRES_PASSWORD}
+ENV POSTGRES_USER ${POSTGRES_USER}
+ENV POSTGRES_HOST ${POSTGRES_HOST}
+
+COPY create_admin_dbs.sh /docker-entrypoint-initdb.d/

@@ -1,0 +1,20 @@
+version: '3.5'
+
+networks:
+  yp_network:
+    name: yp_network
+    external: true
+
+services:
+  admin-postgres:
+    build:
+      context: ./
+      dockerfile: admin.Dockerfile
+    container_name: admin-postgres
+    hostname: admin-postgres
+    env_file:
+      - ../../admin/.env
+    volumes:
+      - ./postgresql_state/data:/var/lib/postgresql/data
+    networks:
+      - yp_network
