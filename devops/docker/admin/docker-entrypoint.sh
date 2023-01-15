@@ -11,9 +11,15 @@ echo "Postgres has been launched"
 echo "Applying database migrations"
 python manage.py migrate
 
+
 # Collect static files
-echo "Collecting static files"
-python manage.py collectstatic
+if [ ! -d "static" ]
+then
+  echo "Collecting static files"
+  python manage.py collectstatic
+else
+  echo "Static files are already collected"
+fi
 
 # Start server
 echo "Starting server"
