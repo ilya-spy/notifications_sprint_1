@@ -27,36 +27,37 @@ component "Worker: Service" {
 
     'Компоненты службы'
     [Queue Manager]
-    note right of [Queue Manager]: Delivery & rate-limiting
+    note left of [Queue Manager]: Delivery & rate-limiting
 
+    [Policy Manager]
+    note bottom of [Policy Manager]: Pre-send policy checks
 
     package "Workers" {
         [Controller]
-        [Email Worker]
-        [Push Worker]
-    }
-
-    package "Async Sub-Service" {
-        [Policy Manager]
-        note bottom of [Policy Manager]: Pre-send policy checks
 
         [Enricher]
         note bottom of [Enricher]: Final content personalization\nIndividually per each message sent
+
+        [Email Worker]
+
+        [Chunk Worker]
+        note bottom of [Chunk Worker]: Split chunks and return to realtime
     }
 
     'Внутренние каналы службы'
-    [Queue Manager] --> [Controller]
+    [Queue Manager] <--> [Controller]
+    [Controller]    <-> [Enricher]
     [Queue Manager] <--> [Policy Manager]
-    [Queue Manager] <--> [Enricher]
 
     [Controller] --> [Email Worker]
-    [Controller] --> [Push Worker]
+    [Controller] -->  [Chunk Worker]
 
     'Обслуживание внешних интерфейсы'
     rabbit.queue -->  [Queue Manager]
+    rabbit.queue <..  [Chunk Worker]
     postgres.rw  <..  [Policy Manager]
     
-    [Enricher] -up-> generator.http
+    [Enricher] --> generator.http
 }
 
 

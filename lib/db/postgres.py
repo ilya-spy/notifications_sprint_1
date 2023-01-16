@@ -1,4 +1,3 @@
-import logging.config
 from datetime import datetime
 
 import backoff
@@ -7,11 +6,12 @@ from sqlalchemy import create_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from config import LOGGING_CONFIG
-from models.models_sql import Template, TypeNotification, UnsubscribeUser, Notification, GroupNotificationUser
+from config import config
+from logger import get_logger
 
-logging.config.dictConfig(LOGGING_CONFIG)
-logger = logging.getLogger(__name__)
+from lib.models.template import Template #TypeNotification, UnsubscribeUser, Notification, GroupNotificationUser
+
+logger = get_logger(__name__)
 
 
 class NotificationsDb:

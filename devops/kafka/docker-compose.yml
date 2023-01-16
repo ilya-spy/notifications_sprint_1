@@ -8,10 +8,10 @@ networks:
 services:
   kafka:
     image: confluentinc/cp-kafka:latest
-    container_name: kafka-node1
-    hostname: kafka-node1
+    container_name: kafka-main
+    hostname: kafka-main
     env_file:
-      - ../../kafka/.env
+      - .env
     depends_on:
       - zookeeper
     networks:

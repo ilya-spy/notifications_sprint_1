@@ -1,0 +1,34 @@
+version: '3.5'
+
+networks:
+  yp_network:
+    name: yp_network
+    external: true
+
+services:
+    worker-chunker:
+      container_name: worker-chunker
+      hostname: worker-chunker
+      build:
+        context: devops/worker/
+      env_file:
+        - devops/worker/.env
+      entrypoint: 'python3 /usr/src/worker/workers/chunker.py'
+
+    worker-mailer-background:
+      container_name: worker-mailer-background
+      hostname: worker-mailer-background
+      build:
+        context: devops/worker/
+      env_file:
+        - devops/worker/.env
+      entrypoint: 'python3 /usr/src/worker/workers/mailer.py'
+
+    worker-mailer-realtime:
+      container_name: worker-mailer-realtime
+      hostname: worker-mailer-realtime
+      build:
+        context: devops/worker/
+      env_file:
+        - devops/worker/.env
+      entrypoint: 'python3 /usr/src/worker/mailer.py --priority'
