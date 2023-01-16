@@ -4,7 +4,7 @@ import uuid
 from pydantic import BaseModel
 
 
-class Evennt(BaseModel):
+class Event(BaseModel):
     '''Используем одну универсальную таблицу для записи юзер-событий о фильмах, рецензиях, лайках'''
     '''Содержит универсальный набор полей для генерации событий из Джанго'''
 

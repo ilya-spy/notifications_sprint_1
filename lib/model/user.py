@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     # primary key
-    user_id: str
+    user_id: uuid
 
     user_name: str
     user_email: str

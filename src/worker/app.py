@@ -1,6 +1,7 @@
 import argparse
 
-from config import Settings
+from lib.config import config
+
 from core.db import NotificationsDb
 from core.get_user import ApiUserInfoFake
 from core.mail import EmailSMTPMailhog
@@ -8,18 +9,6 @@ from core.rabbit import Rabbit
 from core.worker import WorkerSendMessage
 from functools import partial
 
-settings = Settings()
-
-
-def init_channel(cls, settings_q):
-    cls.channel.exchange_declare(
-        exchange=settings_q.exchange,
-        exchange_type=settings_q.exchange_type,
-        durable=settings_q.durable,
-    )
-
-    cls.channel.queue_declare(queue=settings_q.queue, durable=settings_q.durable)
-    cls.channel.queue_bind(exchange=settings_q.exchange, queue=settings_q.queue)
 
 
 if __name__ == '__main__':
