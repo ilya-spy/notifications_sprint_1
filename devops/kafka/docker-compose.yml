@@ -6,6 +6,7 @@ networks:
     external: true
 
 services:
+<<<<<<< HEAD:devops/kafka/docker-compose.yml
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka-main
@@ -14,12 +15,28 @@ services:
       - .env
     depends_on:
       - zookeeper
+=======
+  backend:
+    build:
+      context: ../../../
+      dockerfile: devops/docker/admin/Dockerfile
+    env_file:
+      - ../../admin/.env
+    volumes:
+      - ../../../src/admin/static:/admin/static/
+>>>>>>> origin/admin-panel-modification:devops/docker/admin/docker-compose.yml
     networks:
       - yp_network
 
-  zookeeper:
-    image: zookeeper:3.5
-    container_name: kafka-zookeeper
-    hostname: kafka-zookeeper
+  nginx:
+    image: nginx:1.23.1
+    volumes:
+      - ../../admin/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../../admin/nginx/conf.d/:/etc/nginx/conf.d
+      - ../../../src/admin/static:/data/static/
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     networks:
       - yp_network

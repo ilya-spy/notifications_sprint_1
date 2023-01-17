@@ -18,3 +18,5 @@ services:
       - ./postgresql_state/data:/var/lib/postgresql/data
     networks:
       - yp_network
+    ports:
+      - "5432:5432"

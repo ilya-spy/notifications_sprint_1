@@ -8,6 +8,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "movies.apps.MoviesConfig",
+    "notifications.apps.NotificationsConfig",
     "django_extensions",
     "debug_toolbar",
     "corsheaders",
