@@ -44,7 +44,7 @@ class EmailSMTPFake(IEmail):
 
 class EmailSMTPSSLFake(EmailSMTPFake):
     def connect(self):
-        self.host = 'host'
+        self.host = 'localhost'
         self.port = 9999
 
         context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)

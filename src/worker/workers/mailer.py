@@ -3,78 +3,138 @@
 from more_itertools import chunked
 from pydantic import ValidationError
 
-from lib.api.v1.admin.user import IUserInfo
-from lib.config import config #NotificationStatus, Settings
-from lib.db.postgres import NotificationsDb
+
 from lib.db.rabbitmq import RabbitMQ
+
+from lib.model.message import Message
+from lib.model.template import Template
+from lib.model.notification import Notification
+
+from lib.service.smtp import EmailSMTPService
+from lib.service.messages import get_realtime_queue
+
+from lib.config import config #NotificationStatus, Settings
 from lib.logger import get_logger
 
-from src.worker.workers.base import BaseWorker
-from src.worker.enrich import EnrichService
+from lib.api.v1.admin.user import IUserInfo
+from lib.api.v1.generator.template import ITemplate
+from lib.api.v1.admin.notification import INotification
+from lib.api.v1.sender.email import IEmail
 
-from core.mail import AbstractEmail
-from core.rabbit import Rabbit
-from models.message import Message, MessageChunk, Context, MessageBase
+from src.worker.workers.base import BaseWorker
+from src.worker.service.enrich import EnrichService
+from src.worker.service.policy import PolicyService
+
 
 logger = get_logger(__name__)
-
 
 class MailerWorker(BaseWorker):
     '''Email notifications sender process'''
 
     def __init__(
             self,
-            email: EmailAPI,
-            queue: RabbitMQ,
-            user: IUserInfo,
-            template: GeneratorAPI
+            name: str,
+            iemail: IEmail,
+            itemplate: ITemplate,
+            iuserinfo: IUserInfo,
+            inotification: INotification,
+            queuein: RabbitMQ,
     ):
-        super().__init__(self, 'MailerWorker', queue)
-        self.mailer = mailer
-        self.userapi = userapi
-        self.template
-        self.enricher = EnrichService(self.userapi)
+        super().__init__(self, name, queuein=queuein)
 
+        self.mailer: IEmail = iemail
+        self.userinfo: IUserInfo = iuserinfo
+        self.templater: ITemplate = itemplate
+        self.notifier: INotification = inotification
+
+        self.enricher: EnrichService = EnrichService(self.templater)
+        self.policer: PolicyService = PolicyService(self.notifier)
 
     def prepare(self):
         super().prepare()
+
         self.mailer.connect()
+        self.userinfo.connect()
+        self.templater.connect()
+        self.notifier.connect()
 
     def handler(self, channel, method, properties, body):
         super().handler(channel, method, properties, body)
 
         try:
-            message_rabbit = Message(**body)
+            message_rabbit: Message = Message(**body)
         except ValidationError as e:
-            raise ValueError('Error structure message')
+            raise ValueError('Error: corrupted structure message received')
 
-
-        if not template_raw:
+        template = self.templater.get_template(message_rabbit.template_id)
+        if not template:
             channel.basic_ack(delivery_tag=method.delivery_tag)
-            raise ValueError('Not Template')
+            raise ValueError('No Template to render in email')
 
-        type_notification = template_raw.TypeNotification
-        template = template_raw.Template
+        notification = self.notifier.get_notification(message_rabbit.notification_id)
+        if not notification:
+            channel.basic_ack(delivery_tag=method.delivery_tag)
+            raise ValueError('No Notification config found, can not check policy')
 
-        unsubscribe_user = [item.user_id for item in self.db.get_unsubscribe(
-            type_notification.title,
-            users_id=message_rabbit.context.users_id
-        )]
+        # acknowledge processing
         channel.basic_ack(delivery_tag=method.delivery_tag)
 
+        # send to each user in message batch
         for user_id in message_rabbit.context.users_id:
-            if user_id in unsubscribe_user:
+            user = self.userinfo.get_user(user_id)
+
+            if not self.policer.check_unified_policy(user, notification):
                 continue
-            user_info = self.api_user.get_user(user_id)
-            context_user = {**message_rabbit.context.payload.dict(), 'username': user_info.user_name}
-            message = self.__template_render(template.code, context_user)
+
+            message_body = self.enricher.render_personalized(
+                template,
+                **message_rabbit.context.payload.dict(),
+                {
+                 'username': user.name,
+                 'usermail': user.email,
+                 'usertimezone': user.timezone
+                }
+            )
             try:
-                self.email.send(template.subject, user_info.user_email, message)
+                self.mailer.send(
+                    address= user.email,
+                    body= message_body,
+                    subject=template.head,
+                    sender=self.name
+                )
             except Exception as e:
-                logger.error('Error send message to {}, message: {}'.format(user_info, e))
+                logger.error('Error send message to {}, message: {}'.format(user.email, e))
+                continue
 
-        if message_rabbit.notification_id and message_rabbit.last_chunk:
-            self.db.set_status_notification(message_rabbit.notification_id, NotificationStatus.done.value)
 
-    def run(self):
-        run_worker(self, self.rabbit)
+if __name__ == '__main__':
+
+    # start smtp mailer service
+    mailer: IEmail = EmailSMTPService(
+        host=config.notifications.mailhog_host,
+        port=config.notifications.mailhog_port,
+    )
+    mailer.connect()
+
+    realtime_input_queue = get_realtime_queue()
+
+    if config.is_development():
+        from lib.service.faker import UserControllerFake
+        userapi: IUserInfo = UserControllerFake('url_fake')
+    if config.is_production():
+        from lib.service.notifications import get_notifications
+        userapi: IUserInfo = get_notifications()
+        templater: ITemplate = get_notifications()
+        notifications: INotification = get_notifications()
+    notifications.connect()
+
+
+    worker: BaseWorker = MailerWorker(
+        name=config.notifications.from_email,
+        iemail=mailer,
+        itemplate=templater,
+        iuserinfo=userapi,
+        inotification=notifications,
+        queuein=realtime_input_queue
+    )
+    worker.run()

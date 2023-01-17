@@ -30,6 +30,46 @@ class KafkaConfig(BaseSettings):
     class Config:
         env_prefix = "kafka_"
 
+class RabbitConfig(BaseSettings):
+    host: str = Field('rabbitmq', env='RABBITMQ_HOST')
+    user: str = Field('user', env='RABBITMQ_DEFAULT_USER')
+    password: str = Field('pass', env='RABBITMQ_DEFAULT_PASS')
+
+    class Config:
+        env_prefix = "rabbitmq_"
+
+class RabbitRealtimeConfig(RabbitConfig):
+    exchange: str = Field('send_email', env='RABBIT_SEND_EMAIL_QUEUE_EXCHANGE')
+    exchange_type: str = Field('direct', env='RABBIT_SEND_EMAIL_QUEUE_EXCHANGE_TYPE')
+    queue: str = Field('send_email', env='RABBIT_SEND_EMAIL_QUEUE')
+    durable: str = Field('True', env='RABBIT_SEND_EMAIL_QUEUE_DURABLE')
+
+    class Config:
+        env_prefix = "rabbit_send_email_queue"
+
+class RabbitBackgroundConfig(RabbitConfig):
+    exchange: str = Field('group_chunk', env='RABBIT_CHUNK_QUEUE_EXCHANGE')
+    exchange_type: str = Field('direct', env='RABBIT_CHUNK_QUEUE_EXCHANGE_TYPE')
+    queue: str = Field('group_chunk', env='RABBIT_CHUNK_QUEUE')
+    durable: str = Field('True', env='RABBIT_CHUNK_QUEUE_DURABLE')
+
+    class Config:
+        env_prefix = "rabbit_chink_queue"
+
+class NotificationsConfig(BaseSettings):
+    notification_db_host: str = Field('db', env='BACKEND_DB_HOST')
+    notification_db_port: int = Field(5432, env='BACKEND_DB_PORT')
+    notification_db_user: str = Field('postgres', env='BACKEND_DB_USER')
+    notification_db_password: str = Field('1234', env='BACKEND_DB_PASSWORD')
+    notification_db_name: str = Field('notification', env='BACKEND_DB_NAME')
+
+    from_email: str = Field('Practix "hello@practix.ru"', env='FROM_EMAIL')
+    chunk_size: int = 50
+
+    mailhog_host = 'mailhog_notification'
+    mailhog_port = 1025
+    mailhog_user = ''
+    mailhog_password = ''
 
 class Config(BaseSettings):
     """Настройки приложения."""
@@ -38,21 +78,35 @@ class Config(BaseSettings):
     app_config: str = Field(default="dev")
     debug: bool = Field(default=True)
     loglevel: str = Field(default="DEBUG")
+    chunk_size: int
 
     kafka: KafkaConfig = KafkaConfig()
     auth_api: AuthAPIConfig = AuthAPIConfig()
     sentry: SentryConfig = SentryConfig()
+    
+    bg_worker: RabbitRealtimeConfig = RabbitRealtimeConfig()
+    rt_worker: RabbitBackgroundConfig = RabbitBackgroundConfig()
+    notifications: NotificationsConfig = NotificationsConfig()
+    
+    def is_development(self) -> bool:
+        return self.app_config == 'dev'
+
+    def is_production(self) -> bool:
+        return self.app_config == 'prod'
 
 class ProductionConfig(Config):
     """Конфиг для продакшена."""
 
     debug: bool = False
     app_config: str = "prod"
+    chunk_size: int = Field(default=100)
+
 
 class DevelopmentConfig(Config):
     """Конфиг для девелопмент версии."""
 
     debug: bool = Field(default=True)
+    chunk_size: int = 2
 
 
 # Choose default config

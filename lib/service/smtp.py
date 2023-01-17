@@ -12,9 +12,11 @@ logger = get_logger(__name__)
 
 
 class EmailSMTPService(IEmail):
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, user: str, passwd: str):
         self.host = host
         self.port = port
+        self.user = user
+        self.password = passwd
         self.server = None
 
     def connect(self):

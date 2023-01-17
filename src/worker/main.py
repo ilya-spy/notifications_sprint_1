@@ -2,7 +2,6 @@ import argparse
 
 from lib.config import config
 
-from core.db import NotificationsDb
 from core.get_user import ApiUserInfoFake
 from core.mail import EmailSMTPMailhog
 from core.rabbit import Rabbit
@@ -24,13 +23,6 @@ if __name__ == '__main__':
     else:
         settings_queue = settings.rabbit_send_email
 
-    db = NotificationsDb(
-        user=settings.notification_db_user,
-        password=settings.notification_db_password,
-        host=settings.notification_db_host,
-        port=settings.notification_db_port,
-        db_name=settings.notification_db_name
-    )
 
     email = EmailSMTPMailhog(
         host=settings.mailhog_host,
@@ -40,16 +32,10 @@ if __name__ == '__main__':
         from_email=settings.from_email
     )
 
-    rabbit = Rabbit(
-        settings.rabbit_host,
-        settings.rabbit_user,
-        settings.rabbit_password,
-        queue=settings_queue.queue,
-        exchange=settings_queue.exchange,
-        init_channel=partial(init_channel, settings_q=settings_queue)
-    )
 
-    api = ApiUserInfoFake('url_fake')
+
+    if config.app_config == 'dev':
+        api = ApiUserInfoFake('url_fake')
 
     w = WorkerSendMessage(rabbit, db, email, api)
     w.run()

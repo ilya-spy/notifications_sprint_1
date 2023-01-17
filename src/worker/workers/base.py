@@ -21,15 +21,19 @@ class BaseWorker():
     def __init__(
             self,
             name: str,
-            queue: RabbitMQ,
+            queuein: RabbitMQ = None,
+            queueout: RabbitMQ = None,
     ) -> None:
         self.name = name
-        self.queue = queue
+        self.queuein = queuein
+        self.queueout = queueout
 
     def prepare(self):
         '''Pre-startup init and settings'''
-        self.userapi.connect()
-        self.queue.connect()
+        if self.queuein:
+            self.queuein.connect()
+        if self.queueout:
+            self.queueout.connect()
 
     def run(self):
         '''Run worker service process'''
@@ -38,14 +42,18 @@ class BaseWorker():
 
         logger.debug(f'{self.name}: Worker running')
         while True:
-            try:
+            if self.queuein:
                 # worker responsible for ack manually to control delivery
-                self.queue.listen_channel(self.handler, auto_ack=False)
-            except Exception as e:
-                logger.error(e)
+                try:
+                    self.queuein.listen_channel(self.handler, auto_ack=False)
+                except Exception as e:
+                    logger.error(e)
 
     def handler(self, channel, method, properties, body):
         '''Callback for incoming queue triggers'''
 
-        body = BaseWorker.load_json_data(body)
-        logger.info(f'{self.name}: Message received: {body}')
+        message = BaseWorker.load_json_data(body)
+        logger.info(f'{self.name}: Message received: {message}')
+
+        # just pass-thorugh here
+        self.queueout.publish_channel(body)
