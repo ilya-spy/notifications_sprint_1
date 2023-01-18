@@ -19,43 +19,6 @@ services:
     networks:
       - yp_network
 
-  zookeeper:
-    image: zookeeper:3.5
-    container_name: zookeeper
-    hostname: zookeeper
-    ports:
-      - "2888:2888"
-    networks:
-      - yp_network
-
-  etl:
-    build:
-      context: ../../..
-      dockerfile: devops/docker/etl/Dockerfile
-    command: ["python", "etl/entrypoint.py"]
-    networks:
-      - yp_network
-    env_file:
-      - ../../clickhouse/.env
-    depends_on:
-      - kafka
-    ports:
-      - "8000:8000"
-    restart: on-failure
-
-  performance-test:
-    build:
-      context: ../../..
-      dockerfile: devops/docker/etl/Dockerfile
-    command: [ "python", "analytics_kafka.py" ]
-    networks:
-      - yp_network
-    env_file:
-      - ../../clickhouse/.env
-    depends_on:
-      - kafka
-    restart: on-failure
-
   kafka-ui:
     image: provectuslabs/kafka-ui
     hostname: etl-ui

@@ -74,11 +74,10 @@ class NotificationsConfig(BaseSettings):
 class Config(BaseSettings):
     """Настройки приложения."""
 
-    app_name: str = Field(default="ugc_gate")
+    app_name: str = Field(default="notifications")
     app_config: str = Field(default="dev")
     debug: bool = Field(default=True)
     loglevel: str = Field(default="DEBUG")
-    chunk_size: int
 
     kafka: KafkaConfig = KafkaConfig()
     auth_api: AuthAPIConfig = AuthAPIConfig()

@@ -54,13 +54,13 @@ class UserChunkerWorker(BaseWorker):
     def chunk_group_to_users(self, group_id):
         offset = 0
         while True:
-            result = self.db.get_users_from_group(group_id, config.chunk_size, offset)
+            result = self.db.get_users_from_group(group_id, config.notifications.chunk_size, offset)
             list_user = [user.id for user in result]
             yield list_user
 
-            if len(list_user) < config.chunk_size:
+            if len(list_user) < config.notifications.chunk_size:
                 break
-            offset += config.chunk_size
+            offset += config.notifications.chunk_size
 
     def handler(self, ch, method, properties, body):
         body = BaseWorker.load_json_data(body)
@@ -73,7 +73,7 @@ class UserChunkerWorker(BaseWorker):
 
         if rabbit_message.context.users_id:
             # case 1: users ids specified directly from admin, in-message
-            chunk_users = partial(chunked, rabbit_message.context.users_id, config.chunk_size)
+            chunk_users = partial(chunked, rabbit_message.context.users_id, config.notifications.chunk_size)
             count_users = len(rabbit_message.context.users_id)
         elif group_id:
             # case 2: group name provided - send to groups

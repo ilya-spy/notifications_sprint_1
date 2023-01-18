@@ -27,8 +27,8 @@ class JinjaService():
             <html>
                 <body>
                     <h4>Hello, {{ username }}</h4>
-                    <p>Weekly new releases fpr you:</p>
-                    <p>{{ films_id }}</p>
+                    <p>Weekly new releases for you:</p>
+                    <p>{{ films_data }}</p>
                 </body>
             </html>
         '''
@@ -38,7 +38,7 @@ class JinjaService():
                 <body>
                     <h4>Hello, {{ username }}</h4>
                     <p>Recent events with your content:</p>
-                    <p>{{ films_id }}</p>
+                    <p>{{ film_id }}</p>
                     <p>{{ film_name }} - {{ event_type }}</p>
                 </body>
             </html>

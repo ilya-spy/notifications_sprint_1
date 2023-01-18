@@ -84,10 +84,9 @@ class MailerWorker(BaseWorker):
 
             if not self.policer.check_unified_policy(user, notification):
                 continue
-
             message_body = self.enricher.render_personalized(
                 template,
-                **message_rabbit.context.payload.dict(),
+                message_rabbit.context.payload.dict(),
                 {
                  'username': user.name,
                  'usermail': user.email,
@@ -95,6 +94,7 @@ class MailerWorker(BaseWorker):
                 }
             )
             try:
+                logger.info('Attempt to send rendered: ', message_body)
                 self.mailer.send(
                     address= user.email,
                     body= message_body,

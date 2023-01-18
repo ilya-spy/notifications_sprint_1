@@ -6,7 +6,7 @@ from pydantic import BaseModel
 # base message
 class MessageBase(BaseModel):
     type_send: str
-    template_id: uuid.UUID
+    template_id: str
     notification_id: Optional[uuid.UUID]
     last_chunk: bool = False
 

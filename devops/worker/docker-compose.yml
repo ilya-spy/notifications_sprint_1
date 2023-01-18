@@ -6,29 +6,32 @@ networks:
     external: true
 
 services:
-    worker-chunker:
-      container_name: worker-chunker
-      hostname: worker-chunker
+    worker-mailer:
+      container_name: worker-mailer
+      hostname: worker-mailer
       build:
-        context: devops/worker/
+        context: devops/worker
+        args:
+          uid: ${HOST_UID}
+          gid: ${HOST_GID}
       env_file:
-        - devops/worker/.env
-      entrypoint: 'python3 /usr/src/worker/workers/chunker.py'
+        - .env
+      entrypoint: 'tail -F anything'
 
-    worker-mailer-background:
-      container_name: worker-mailer-background
-      hostname: worker-mailer-background
+    worker-chunker-background:
+      container_name: worker-chunker-background
+      hostname: worker-chunker-background
       build:
-        context: devops/worker/
+        context: devops/worker
       env_file:
-        - devops/worker/.env
-      entrypoint: 'python3 /usr/src/worker/workers/mailer.py'
+        - .env
+      entrypoint: 'python3 /usr/src/worker/workers/chunker.py --background'
 
-    worker-mailer-realtime:
-      container_name: worker-mailer-realtime
-      hostname: worker-mailer-realtime
+    worker-chunker-realtime:
+      container_name: worker-chunker-realtime
+      hostname: worker-chunker-realtime
       build:
-        context: devops/worker/
+        context: devops/worker
       env_file:
-        - devops/worker/.env
-      entrypoint: 'python3 /usr/src/worker/mailer.py --priority'
+        - .env
+      entrypoint: 'python3 /usr/src/worker/chunker.py --realtime'
