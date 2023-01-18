@@ -65,6 +65,8 @@ class NotificationsConfig(BaseSettings):
 
     from_email: str = Field('Practix "hello@practix.ru"', env='FROM_EMAIL')
     chunk_size: int = 50
+    
+    time_to_restart = 60
 
     mailhog_host = 'mailhog_notification'
     mailhog_port = 1025

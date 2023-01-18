@@ -3,6 +3,10 @@
 Проектные работы в этом модуле в команде. Задания на спринт вы найдёте внутри тем.  
 Командный репозиторий 10го спринта - https://github.com/ilya-spy/notifications_sprint_1.git  
 
+### Команда №9 (2 чел)
+`@bairachny.daniil @ilyaspy`  
+`тимлид - @ilyaspy`  
+
 ## Aнализ ТЗ
 ### Программная Архитектура сервиса нотификаций в данной реализации предполагает наличие следующих программных компонентов и микросервисов:
 
@@ -25,12 +29,19 @@
 
 
 ## Запуск тестовых стендов приложения в Docker Composer
-Базовая настройка окружения - `make pipenv\base`  
+Полный стенд решения -  
+`make notifications\dev\setup`  
+`make notifications\dev\teardown`  
 
 Настройка стенда worker:  
 1. `make worker\dev\setup`  -> start  
 2. `make worker\mailer` -> login  
 2. `make worker\dev\teardown`  -> finish
+
+Настройка стенда admin:  
+1. `make admin\dev\setup`  -> start  
+2. `make admin\dev\teardown`  -> finish
+
 
 ## Установка локального окружения хоста
 Базовая настройка окружения - `make pipenv\base`  

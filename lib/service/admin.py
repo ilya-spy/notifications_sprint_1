@@ -1,7 +1,7 @@
 # Admin controller used to provide mock model services for testing
 import uuid
 from typing import List
-
+from functools import lru_cache
 
 from lib.api.v1.admin.user import IUserInfo
 from lib.api.v1.admin.notification import INotification
@@ -103,3 +103,11 @@ class AdminNotifications(INotification):
 
     def get_target_groups(self, notification: Notification) -> List[str]:
         return 'admin'
+
+@lru_cache()
+def get_admin_notifications() -> INotification:
+    return AdminNotifications()
+
+@lru_cache()
+def get_admin_user() -> IUserInfo:
+    return AdminUserInfo()

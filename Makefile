@@ -21,17 +21,15 @@ help:
 # Команды развёртывания полного Notifications стенда
 # (все сервисы вместе, ниже есть команды для запуска отдыльных сервисов)
 #
-notifications/prod/setup:
-	make admin/prod/setup
-	make sender/prod/setup
-	make worker/prod/setup
-.PHONY: notifications/prod/setup
+notifications/dev/setup:
+	make admin/dev/setup
+	make worker/dev/setup
+.PHONY: notifications/dev/setup
 
 notifications/prod/teardown:
-	make worker/prod/teardown
-	make sender/prod/teardown
-	make admin/prod/teardown
-.PHONY: notifications/prod/teardown
+	make worker/dev/teardown
+	make admin/dev/teardown
+.PHONY: notifications/dev/teardown
 
 
 #
@@ -44,6 +42,14 @@ worker/prod/%: export DOCKER_TARGET := prod
 
 worker/mailer:
 	@docker exec -it worker-mailer bash
+
+#
+# Команды развертывания и доступа в службы admin
+#
+admin/%: export DOCKER_DIR := devops/admin
+
+admin/dev/%: export DOCKER_TARGET := dev
+admin/prod/%: export DOCKER_TARGET := prod
 
 
 #

@@ -6,18 +6,20 @@ from http import HTTPStatus
 from logging import config
 from time import sleep
 
-from config import TIME_TO_RESTART, LOG_CONFIG
-from models import Context, Message
-from utils.api_rabbit import api_send_message
-from utils.posgres_db import PGNotification
+from lib.config import config
+from lib.model.message import Context, Message
+from lib.service.admin import get_admin_user, get_admin_notifications
+from lib.service.messages import get_background_queue
 
-config.dictConfig(LOG_CONFIG)
+from lib.api.v1.admin.notification import INotification
+from lib.api.v1.generator.template import ITemplate
+from lib.api.v1.admin.user import IUserInfo
+from lib.db.rabbitmq import RabbitMQ
 
 
-def process(postgres):
+def process(queue: RabbitMQ, user: IUserInfo, notifications: INotification):
     try:
-        result = postgres.get_notification()
-        data = [{key: value for key, value in item.items()} for item in result]
+        data = [{key: value for key, value in item.items()} for item in notifications]
 
         for item in data:
             params = item.get('params')
@@ -33,17 +35,17 @@ def process(postgres):
                 notification_id=item.get('id')
             )
             logging.debug(message.dict())
-            resp = api_send_message(message.dict())
-            if resp.status_code == HTTPStatus.OK:
-                postgres.set_status_processing(item.get('id'))
-
+            resp = queue.publish_channel(message.dict())
     except Exception as e:
         logging.error(e)
 
 
 if __name__ == '__main__':
-    pg = PGNotification()
+    # Choose Background
+    queue = get_background_queue()
+    user = get_admin_user()
+    notes = get_admin_notifications()
 
     while True:
-        process(pg)
-        sleep(TIME_TO_RESTART)
+        process(queue, user, notes)
+        sleep(config.notifications.time_to_restart)
