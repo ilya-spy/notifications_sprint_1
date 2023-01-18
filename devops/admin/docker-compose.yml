@@ -6,20 +6,26 @@ networks:
     external: true
 
 services:
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka-node1
-    hostname: kafka-node1
+  backend:
+    build:
+      context: ../../
+      dockerfile: devops/docker/admin/Dockerfile
     env_file:
-      - ../../kafka/.env
-    depends_on:
-      - zookeeper
+      - ../admin/.env
+    volumes:
+      - ../../../src/admin/static:/admin/static/
     networks:
       - yp_network
 
-  zookeeper:
-    image: zookeeper:3.5
-    container_name: kafka-zookeeper
-    hostname: kafka-zookeeper
+  nginx:
+    image: nginx:1.23.1
+    volumes:
+      - ../admin/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../admin/nginx/conf.d/:/etc/nginx/conf.d
+      - ../../src/admin/static:/data/static/
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     networks:
       - yp_network

@@ -11,3 +11,8 @@ GITHUB_OUTPUT
 
 devops/mongo/config
 devops/mongo/data
+
+
+**/postgresql_state/
+
+src/admin/static/
