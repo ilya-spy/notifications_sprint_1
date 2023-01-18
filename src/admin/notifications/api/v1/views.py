@@ -2,7 +2,7 @@ import uuid
 
 from django.http import HttpResponse
 from notifications.api.v1 import schemas
-from notifications.models import CustomUser, Notification, UserGroup
+from notifications.models import CustomUser, Notification
 
 # Create your views here.
 
@@ -17,7 +17,7 @@ def get_notification(request, id: uuid.UUID):
         id=q.id,
         name=q.name,
         type=q.type,
-        groups=[group.name for group in q.groups.all()],
+        groups=q.groups,
         template_id=q.template.id,
     )
 
@@ -32,9 +32,7 @@ def get_notification_groups(request, id: uuid.UUID):
     if not q:
         return HttpResponse(status=404)
 
-    groups = [
-        schemas.UserGroupSchema(id=row.id, name=row.name) for row in q.groups.all()
-    ]
+    groups = q.groups
 
     if not groups:
         return HttpResponse(status=204)
@@ -53,7 +51,7 @@ def get_user(request, id: uuid.UUID):
         name=q.name,
         email=q.email,
         timezone=q.timezone,
-        user_group=[row.name for row in q.user_group.all()],
+        user_group=q.groups,
     )
 
     return HttpResponse(
@@ -67,9 +65,7 @@ def get_user_groups(request, id: uuid.UUID):
     if not q:
         return HttpResponse(status=404)
 
-    groups = [
-        schemas.UserGroupSchema(id=row.id, name=row.name) for row in q.groups.all()
-    ]
+    groups = q.groups
 
     if not groups:
         return HttpResponse(status=204)
@@ -77,8 +73,8 @@ def get_user_groups(request, id: uuid.UUID):
     return HttpResponse(status=200, content_type="application/json", content=groups)
 
 
-def get_user_groups_users(request, id: uuid.UUID):
-    q = UserGroup.objects.get(id)
+def get_user_groups_users(request, group: str):
+    q = CustomUser.objects.filter(user_group__contains=[group])
 
     if not q:
         return HttpResponse(status=404)
@@ -87,7 +83,7 @@ def get_user_groups_users(request, id: uuid.UUID):
         schemas.CustomUserSchema(
             id=row.id, name=row.name, email=row.email, timezone=row.timezone
         )
-        for row in q.user_set.all()
+        for row in q
     ]
 
     if not users:
@@ -96,13 +92,8 @@ def get_user_groups_users(request, id: uuid.UUID):
     return HttpResponse(status=200, content_type="application/json", content=users)
 
 
-def get_user_groups_users_count(request, id: uuid.UUID):
-    q = UserGroup.objects.get(id)
-
-    if not q:
-        return HttpResponse(status=404)
-
-    users_count = q.user_set.count()
+def get_user_groups_users_count(request, group: str):
+    users_count = CustomUser.objects.filter(user_group__contains=[group]).count()
 
     return HttpResponse(
         status=200,
