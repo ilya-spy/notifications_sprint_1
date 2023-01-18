@@ -21,17 +21,15 @@ help:
 # Команды развёртывания полного Notifications стенда
 # (все сервисы вместе, ниже есть команды для запуска отдыльных сервисов)
 #
-notifications/prod/setup:
-	make admin/prod/setup
-	make sender/prod/setup
-	make worker/prod/setup
-.PHONY: notifications/prod/setup
+notifications/dev/setup:
+	make admin/dev/setup
+	make worker/dev/setup
+.PHONY: notifications/dev/setup
 
 notifications/prod/teardown:
-	make worker/prod/teardown
-	make sender/prod/teardown
-	make admin/prod/teardown
-.PHONY: notifications/prod/teardown
+	make worker/dev/teardown
+	make admin/dev/teardown
+.PHONY: notifications/dev/teardown
 
 
 #
@@ -45,6 +43,14 @@ worker/prod/%: export DOCKER_TARGET := prod
 worker/mailer:
 	@docker exec -it worker-mailer bash
 
+#
+# Команды развертывания и доступа в службы admin
+#
+admin/%: export DOCKER_DIR := devops/admin
+
+admin/dev/%: export DOCKER_TARGET := dev
+admin/prod/%: export DOCKER_TARGET := prod
+
 
 #
 # Шаблоны-команды для запуска и остановки сервисов через docker-composer
@@ -52,79 +58,23 @@ worker/mailer:
 %/dev/setup:
 	@make docker/prepare
 	@make docker/setup
-.PHONY: worker/dev/setup
+.PHONY: %/dev/setup
 
 %/prod/setup:
 	@make docker/prepare
 	@make docker/setup
-.PHONY: worker/prod/setup
+.PHONY: %/prod/setup
 
 %/dev/teardown:
 	@make docker/prepare
 	@make docker/destroy
-.PHONY: worker/teardown/dev
+.PHONY: %/teardown/dev
 
 %/prod/teardown:
 	@make docker/prepare
 	@make docker/destroy
-.PHONY: worker/prod/teardown
+.PHONY: %/prod/teardown
 
-
-
-
-#
-# Команды развертывания и доступа в Kafka
-#
-kafka/%: export DOCKER_DIR := devops/docker/etl
-
-kafka/dev/%: export DOCKER_TARGET := dev
-kafka/prod/%: export DOCKER_TARGET := prod
-
-kafka/dev/setup:
-	@make docker/prepare
-	@make docker/setup
-.PHONY: kafka/dev/setup
-
-kafka/dev/teardown:
-	@make docker/prepare
-	@make docker/destroy
-.PHONY: kafka/dev/teardown
-
-#
-# Команды развертывания и доступа в MongoDB
-#
-mongo/%: export DOCKER_DIR := devops/docker/mongo
-
-mongo/dev/%: export DOCKER_TARGET := dev
-mongo/prod/%: export DOCKER_TARGET := prod
-
-mongo/dev/setup:
-	@make docker/prepare
-	@make docker/setup
-.PHONY: mongo/dev/setup
-
-mongo/dev/teardown:
-	@make docker/prepare
-	@make docker/destroy
-.PHONY: mongo/dev/teardown
-
-#
-# Команды развёртывания API шлюза для отправки событий с отметками о просмотрах в Кафку
-#
-gate/%: export DOCKER_DIR := devops/docker/gate
-
-gate/dev/%: export DOCKER_TARGET := dev
-gate/prod/%: export DOCKER_TARGET := prod
-
-gate/dev/setup:
-	@make docker/prepare
-	@make docker/setup
-.PHONY: gate/dev/setup
-
-gate/dev/teardown:
-	@make docker/prepare
-	@make docker/destroy
-.PHONY: gate/dev/teardown
 
 
 #

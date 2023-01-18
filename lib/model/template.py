@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class Template(BaseModel):
     # primary key
-    id: str
+    id: uuid.UUID
 
     # identifier used in AdminGUI to list all templates
     name: str
@@ -18,4 +18,4 @@ class Template(BaseModel):
     # add allowed arguments that is used by managers in template body
     username: str
     useremail: str
-    usergroup: str
+    usertimezone: str

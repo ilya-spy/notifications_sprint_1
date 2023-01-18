@@ -4,40 +4,48 @@ version: '3.5'
 # dev окружение самодостаточно для stand-alone тестирования
 
 services:
-    worker-chunker:
+    worker-chunker-realtime:
       depends_on:
-        - worker-db
         - worker-rabbitmq
+      build:
+        target: develop
+      volumes:
         - ../../src/:/usr/src
         - ../../lib/:/usr/lib
+        - ../../test/:/usr/test
+      env_file:
+        - .env
+        - ../rabbitmq/.env
 
-    worker-enricher:
+    worker-chunker-background:
       depends_on:
-        - worker-db
         - worker-rabbitmq
+      build:
+        target: develop
+      volumes:
         - ../../src/:/usr/src
         - ../../lib/:/usr/lib
+        - ../../test/:/usr/test
+      env_file:
+        - .env
+        - ../rabbitmq/.env
 
     worker-mailer:
       depends_on:
-        - worker-db
+        - worker-mailhog
         - worker-rabbitmq
+      build:
+        target: develop
       volumes:
         - ../../src/:/usr/src
         - ../../lib/:/usr/lib
-
-    worker-db:
-      container_name: worker-db
-      image: postgres:12.0-alpine
-      ports:
-        - 5432:5432
-      volumes:
-        - postgres_data:/var/lib/postgresql/data/
+        - ../../test/:/usr/test
       env_file:
-        - devops/postgres/.env
-
+        - .env
+        - ../rabbitmq/.env
     worker-rabbitmq:
       container_name: worker-rabbitmq
+      hostname: worker-rabbitmq
       image: rabbitmq:3.10.5-management-alpine
       ports:
         - 5672:5672
@@ -45,8 +53,17 @@ services:
       volumes:
         - rabbitmq_data:/var/lib/rabbitmq/
       env_file:
-        - devops/rabbit/.env
+        - .env
+        - ../rabbitmq/.env
+
+    worker-mailhog:
+      container_name: mailhog_notification
+      image: mailhog/mailhog
+      logging:
+        driver: 'none'
+      ports:
+        - 1025:1025
+        - 8025:8025
 
 volumes:
-    postgres_data:
     rabbitmq_data:

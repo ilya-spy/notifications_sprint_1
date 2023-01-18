@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10 AS base
 
 RUN apt-get update && apt-get install -y netcat
 
@@ -13,5 +13,7 @@ WORKDIR ./admin
 COPY /devops/docker/admin/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN chmod +x ./docker-entrypoint.sh
+
+FROM base AS develop
 
 ENTRYPOINT [ "./docker-entrypoint.sh" ]

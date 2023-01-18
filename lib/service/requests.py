@@ -4,9 +4,9 @@ import requests
 
 from requests import Session
 
-from lib.api.v1.admin.user import IUserInfo
 from lib.model.user import User
 
+from lib.api.v1.admin.user import IUserInfo
 
 class UserController(IUserInfo):
     '''User information service requests proxy'''
