@@ -21,7 +21,7 @@ class AdminUserInfo(IUserInfo):
     def __init__(self):
         self.users = []
 
-    def get_admin_user(self, groups):
+    def get_admin_userinfo(self, groups):
         return User(**{
             'id': uuid.uuid4(),
             'name': config.notifications.db_user,
@@ -30,10 +30,10 @@ class AdminUserInfo(IUserInfo):
         })
 
     def connect(self):
-        self.admin = self.get_admin_user('all')
+        self.admin = self.get_admin_userinfo('all')
         self.users.append(self.admin)
 
-        self.manager = self.get_admin_user('all,weekly,manager')
+        self.manager = self.get_admin_userinfo('all,weekly,manager')
         self.users.append(self.manager)
         
         logger.info('Admin user service connected')
@@ -64,6 +64,8 @@ class AdminUserInfo(IUserInfo):
         return len(group_users)
 
 
+
+    
 class AdminNotifications(INotification):
     '''Notifications data base for administrator access'''
     def __init__(self):
@@ -71,6 +73,14 @@ class AdminNotifications(INotification):
         self.admin_template = get_templates().get_template('admin')
         self.weekly_template = get_templates().get_template('weekly')
 
+        admin_sender: AdminSender = AdminSender(
+            queue=queue,
+            userid=admin_info.get_admin_id(),
+            userapi=admin_info,
+            sleeptime=config.notifications.time_to_restart
+        )
+        admin_sender.connect()
+    
     def get_admin_notification(self):
         return Notification(**{
             'id': uuid.uuid4(),
@@ -109,5 +119,5 @@ def get_admin_notifications() -> INotification:
     return AdminNotifications()
 
 @lru_cache()
-def get_admin_user() -> IUserInfo:
+def get_admin_userinfo() -> IUserInfo:
     return AdminUserInfo()

@@ -1,47 +1,41 @@
 # Служба управления отложенными массовыми рассылками
 # Cлужба реализует методы для работы FastAPI и WebSocket - управляет настройками рассылок в БД
+import argparse
 
-import logging
-from time import sleep
+from lib.api.v1.admin.notification import IAdminNotification
+from lib.api.v1.frontend.notification import IClientNotification
+from lib.api.v1.admin.user import IUserInfo, IAdminInfo
 
-from lib.api.v1.admin.notification import INotification
-from lib.api.v1.admin.user import IUserInfo
-from lib.config import config
 from lib.db.rabbitmq import RabbitMQ
-from lib.model.message import Context, Message
-from lib.service.admin import get_admin_notifications, get_admin_user
+from lib.service.admin import get_admin_notifications, get_admin_userinfo
+from lib.service.notifications import get_notifications, get_userinfo
+
 from lib.service.messages import get_background_queue
+from src.sender.sender import CommonSender
 
 
-def process(queue: RabbitMQ, user: IUserInfo, notifications: INotification):
-    try:
-        data = [{key: value for key, value in item.items()} for item in notifications]
-
-        for item in data:
-            params = item.get("params")
-            context = Context(
-                group_id=params.get("group_id", None),
-                users_id=params.get("users_id", None),
-                payload=params.get("payload", {}),
-            )
-            message = Message(
-                type_send=item.get("title"),
-                context=context,
-                template_id=item.get("template_id"),
-                notification_id=item.get("id"),
-            )
-            logging.debug(message.dict())
-            queue.publish_channel(message.dict())
-    except Exception as e:
-        logging.error(e)
+from lib.config import config
+from lib.logger import get_logger
+logger = get_logger(__name__)
 
 
 if __name__ == "__main__":
-    # Choose Background
-    queue = get_background_queue()
-    user = get_admin_user()
-    notes = get_admin_notifications()
+    # Choose Background scenario
+    queue: RabbitMQ = get_background_queue()
 
-    while True:
-        process(queue, user, notes)
-        sleep(config.notifications.time_to_restart)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--admin",
+        action="store_true",
+        help="whether this sender service admin (flag set) or client (default) api",
+    )
+    parser.set_defaults(admin=False)
+    args = parser.parse_args()
+
+    if args.admin:
+        # Set admin user and selection of standard admin templates
+        sender_userapi: IAdminInfo = get_admin_userinfo()
+        sender: IAdminNotification = get_admin_notifications()
+    else:
+        sender_userapi: IUserInfo = get_userinfo()
+        sender: IClientNotification = get_notifications()

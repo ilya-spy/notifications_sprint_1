@@ -1,18 +1,13 @@
-from datetime import datetime
-
 import backoff
 import sqlalchemy
+
+from datetime import datetime
+
 from logger import get_logger
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from lib.model.template import (
-    GroupNotificationUser,
-    Notification,
-    Template,
-    TypeNotification,
-    UnsubscribeUser,
-)
+from src.admin.notifications.models import Notification, Template
 
 logger = get_logger(__name__)
 
@@ -54,22 +49,23 @@ class NotificationsDb:
 
     def get_template(self, id):
         return (
-            self.session.query(Template, TypeNotification)
-            .join(TypeNotification)
+            self.session.query(Template)
             .filter(Template.id == id)
             .first()
         )
 
-    def get_unsubscribe(self, type_notification, users_id):
+    def list_admin_notifications(self, id):
         return (
-            self.session.query(UnsubscribeUser)
-            .where(UnsubscribeUser.user_id.in_(users_id))
-            .join(
-                TypeNotification,
-                UnsubscribeUser.notification_type_id == TypeNotification.id,
-            )
-            .filter(TypeNotification.title == type_notification)
-            .all()
+            self.session.query(Template)
+            .filter(Template.id == id)
+            .first()
+        )
+
+    def list_client_notifications(self, id):
+        return (
+            self.session.query(Template)
+            .filter(Template.id == id)
+            .first()
         )
 
     def set_status_notification(self, notification_id, status):

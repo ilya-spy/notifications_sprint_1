@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from lib.api.v1.admin.user import IUserInfo
 from lib.api.v1.admin.notification import INotification
+from lib.api.v1.frontend.notification import IClientNotification
 from lib.api.v1.generator.template import ITemplate
 
 from lib.db.postgres import NotificationsDb
@@ -25,7 +26,7 @@ def get_userinfo() -> IUserInfo:
     )
 
 @lru_cache()
-def get_notifications() -> INotification:
+def get_notifications() -> IClientNotification:
     '''Production notifications db'''
     return NotificationsDb(
         user=config.notifications.db_user,
