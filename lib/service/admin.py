@@ -24,7 +24,7 @@ class AdminUserInfo(IUserInfo):
     def get_admin_user(self, groups):
         return User(**{
             'id': uuid.uuid4(),
-            'name': config.notifications.notification_db_user,
+            'name': config.notifications.db_user,
             'email': config.notifications.from_email,
             'groups': 'admin,' + groups
         })
