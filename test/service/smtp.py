@@ -1,30 +1,19 @@
-# fake controller used to provide mock model services for testing
-import ssl
+
 import smtplib
+import ssl
 
 from email.message import EmailMessage
+
 from faker import Faker
 
-from lib.api.v1.admin.user import IUserInfo
 from lib.api.v1.sender.email import IEmail
-
-from lib.model.user import User
-
 from lib.logger import get_logger
 
 fake = Faker()
-logger = get_logger()
-
-class UserControllerFake(IUserInfo):
-    def get_user(self, uuid):
-        return User(**{
-            'user_id': uuid,
-            'user_name': fake.name(),
-            'user_email': fake.email()
-        })
-
+logger = get_logger("Fake SMTP")
 
 class EmailSMTPFake(IEmail):
+    '''Fake SMTP server run in testing and development'''
     def connect(self):
         logger.info('connect FakeSMTP')
 
@@ -40,12 +29,13 @@ class EmailSMTPFake(IEmail):
     def close(self):
         logger.info('disconnect FakeSMTP')
 
-
-
 class EmailSMTPSSLFake(EmailSMTPFake):
-    def connect(self):
+    '''Fake SMTP server'''
+    def connect(self, user, password):
         self.host = 'localhost'
         self.port = 9999
+        self.user = user
+        self.password = password
 
         context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         self.server = smtplib.SMTP(self.host, self.port)

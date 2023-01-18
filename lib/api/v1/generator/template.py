@@ -11,5 +11,9 @@ class ITemplate(ABC):
         pass
 
     @abstractmethod
-    def get_template(self, id: uuid.UUID) -> Template:
+    def get_template(self, name: str) -> Template:
+        pass
+    
+    @abstractmethod
+    def render_template(self, template: Template, context: dict) -> str:
         pass

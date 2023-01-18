@@ -3,15 +3,14 @@
 from more_itertools import chunked
 from pydantic import ValidationError
 
-
 from lib.db.rabbitmq import RabbitMQ
-
 from lib.model.message import Message
-from lib.model.template import Template
-from lib.model.notification import Notification
 
 from lib.service.smtp import EmailSMTPService
+from lib.service.admin import AdminUserInfo, AdminNotifications
+from lib.service.jinja import get_templates
 from lib.service.messages import get_realtime_queue
+from lib.service.notifications import get_notifications
 
 from lib.config import config #NotificationStatus, Settings
 from lib.logger import get_logger
@@ -21,8 +20,8 @@ from lib.api.v1.generator.template import ITemplate
 from lib.api.v1.admin.notification import INotification
 from lib.api.v1.sender.email import IEmail
 
+from src.generator.enricher import EnrichService
 from src.worker.workers.base import BaseWorker
-from src.worker.service.enrich import EnrichService
 from src.worker.service.policy import PolicyService
 
 
@@ -108,26 +107,22 @@ class MailerWorker(BaseWorker):
 
 
 if __name__ == '__main__':
-
     # start smtp mailer service
     mailer: IEmail = EmailSMTPService(
         host=config.notifications.mailhog_host,
         port=config.notifications.mailhog_port,
     )
-    mailer.connect()
 
-    realtime_input_queue = get_realtime_queue()
+    templater: ITemplate = get_templates()
+    input_queue: RabbitMQ = get_realtime_queue()
 
     if config.is_development():
-        from lib.service.faker import UserControllerFake
-        userapi: IUserInfo = UserControllerFake('url_fake')
-    if config.is_production():
-        from lib.service.notifications import get_notifications
-        userapi: IUserInfo = get_notifications()
-        templater: ITemplate = get_notifications()
-        notifications: INotification = get_notifications()
-    notifications.connect()
+        userapi: IUserInfo = AdminUserInfo()
+        notifications: INotification = AdminNotifications()
 
+    if config.is_production():
+        userapi: IUserInfo = get_notifications()
+        notifications: INotification = get_notifications()
 
     worker: BaseWorker = MailerWorker(
         name=config.notifications.from_email,
@@ -135,6 +130,6 @@ if __name__ == '__main__':
         itemplate=templater,
         iuserinfo=userapi,
         inotification=notifications,
-        queuein=realtime_input_queue
+        queuein=input_queue
     )
     worker.run()

@@ -1,4 +1,4 @@
-
+import argparse
 import json
 
 from functools import partial
@@ -6,13 +6,15 @@ from functools import partial
 from more_itertools import chunked
 from pydantic import ValidationError
 
+from lib.api.v1.admin.user import IUserInfo
 from lib.db.postgres import NotificationsDb
 from lib.db.rabbitmq import RabbitMQ
 
+from lib.service.admin import AdminUserInfo
+from lib.service.messages import get_realtime_queue, get_background_queue
+from lib.service.notifications import get_notifications
 from lib.model.message import Message, MessageChunk, Context, MessageBase
-from lib.model.user import User
 
-from lib.api.v1.admin.user import IUserInfo
 from src.worker.workers.base import BaseWorker
 
 from lib.config import config
@@ -20,7 +22,7 @@ from lib.logger import get_logger
 
 logger = get_logger(__name__)
 
-class WorkerChunkUserFromGroup(BaseWorker):
+class UserChunkerWorker(BaseWorker):
     def __init__(
             self,
             name: str,
@@ -86,3 +88,36 @@ class WorkerChunkUserFromGroup(BaseWorker):
         ):
             logger.info(' [Produced]: ' + new_message)
             self.queueout.publish_channel(json.dumps(new_message.dict()))
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--realtime", action='store_true', help="send to realtime mailer or background queue for further enrich, default true")
+    parser.set_defaults(realtime=True)
+    
+    parser.add_argument("--background", action='store_true', help="send to background queue for further enrich, default false")
+    parser.set_defaults(background=False)
+
+    args = parser.parse_args()
+    send_to: RabbitMQ = None
+
+    if args.realtime:
+        send_to = get_realtime_queue()
+    elif args.background:
+        send_to = get_background_queue()
+
+    if config.is_development():
+        userapi: IUserInfo = AdminUserInfo()
+    if config.is_production():
+        userapi: IUserInfo = get_notifications()
+
+    # chunker that enriches background tasks and passes them to realtime
+    worker: BaseWorker = UserChunkerWorker(
+        name='Worker Chunker',
+        rabbit_consumer=get_background_queue(),
+        rabbit_producer=send_to,
+        iuserinfo=userapi,
+    )
+    worker.run()
