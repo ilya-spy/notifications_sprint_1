@@ -1,0 +1,20 @@
+version: "3.9"
+
+networks:
+  yp_network:
+    name: yp_network
+    external: true
+
+services:
+  api:
+    build:
+      context: ../../../
+      dockerfile: devops/docker/gate/Dockerfile
+    container_name: gate-api
+    hostname: gate_api
+    user: "gatekeeper"
+    restart: always
+    env_file:
+      - ../../gate/.env
+    networks:
+      - yp_network
