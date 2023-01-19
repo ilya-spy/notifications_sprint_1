@@ -1,3 +1,6 @@
+
+import uuid 
+
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -10,7 +13,7 @@ class IUserInfo(ABC):
         pass
 
     @abstractmethod
-    def get_user(self, id: User.id) -> User:
+    def get_user(self, id: uuid.UUID) -> User:
         pass
     
     @abstractmethod
@@ -23,4 +26,9 @@ class IUserInfo(ABC):
     
     @abstractmethod
     def get_count_users_in_group(group_id: str):
+        pass
+
+class IAdminInfo(IUserInfo):
+    @abstractmethod
+    def get_admin_id(self):
         pass

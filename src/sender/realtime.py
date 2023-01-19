@@ -1,23 +1,40 @@
-# Служба управления мгновенными точечными рассылками
-# Cлужба реализует методы для работы FastAPI - настройка мгновенной доставки уведомлений
-# Cлужба реализует методы для работы WebSocket - мгновенная доставка уведомлений с открытием сессии
-from time import sleep
+# Служба управления отложенными массовыми рассылками
+# Cлужба реализует методы для работы FastAPI и WebSocket - управляет настройками рассылок в БД
+from functools import lru_cache
 
-from lib.api.v1.admin.notification import INotification
-from lib.api.v1.admin.user import IUserInfo
-from lib.config import config
+from lib.api.v1.admin.user import IUserInfo, IAdminInfo
 from lib.db.rabbitmq import RabbitMQ
-from lib.service.admin import get_admin_notifications, get_admin_user
+from lib.service.userinfo import get_userinfo, get_admin_userinfo
+
 from lib.service.messages import get_realtime_queue
-from src.sender.background import process
+from src.sender.sender import CommonSender
 
-if __name__ == "__main__":
-    # Choose Real time
-    queue: RabbitMQ = get_realtime_queue()
+from lib.logger import get_logger
+logger = get_logger(__name__)
 
-    user: IUserInfo = get_admin_user()
-    notes: INotification = get_admin_notifications()
 
-    while True:
-        process(queue, user, notes)
-        sleep(config.notifications.time_to_restart)
+# Choose Realtime scenario
+queue: RabbitMQ = get_realtime_queue()
+
+# set realtime  delay
+delay: int = 0
+
+@lru_cache
+def get_realtime_sender(userid) -> CommonSender:
+    sender_userapi: IUserInfo = get_userinfo()
+    return CommonSender(
+        queue=queue,
+        userid=userid,
+        userapi=sender_userapi,
+        sleeptime=delay
+    )
+
+@lru_cache
+def get_admin_realtime_sender() -> CommonSender:
+    sender_userapi: IAdminInfo = get_admin_userinfo()
+    return CommonSender(
+        queue=queue,
+        userid=sender_userapi.get_admin_id(),
+        userapi=sender_userapi,
+        sleeptime=delay
+    )

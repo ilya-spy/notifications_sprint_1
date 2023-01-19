@@ -31,39 +31,42 @@ class KafkaConfig(BaseSettings):
         env_prefix = "kafka_"
 
 class RabbitConfig(BaseSettings):
-    host: str = Field('rabbitmq', env='RABBITMQ_HOST')
-    user: str = Field('user', env='RABBITMQ_DEFAULT_USER')
-    password: str = Field('pass', env='RABBITMQ_DEFAULT_PASS')
+    host: str = Field('rabbitmq')
+    user: str = Field('user')
+    password: str = Field('pass')
 
     class Config:
         env_prefix = "rabbitmq_"
+        env_nested_delimeter = "_"
 
 class RabbitRealtimeConfig(RabbitConfig):
-    exchange: str = Field('send_email', env='RABBIT_SEND_EMAIL_QUEUE_EXCHANGE')
-    exchange_type: str = Field('direct', env='RABBIT_SEND_EMAIL_QUEUE_EXCHANGE_TYPE')
-    queue: str = Field('send_email', env='RABBIT_SEND_EMAIL_QUEUE')
-    durable: str = Field('True', env='RABBIT_SEND_EMAIL_QUEUE_DURABLE')
+    exchange: str = Field('send_email')
+    exchange_type: str = Field('direct')
+    queue: str = Field('send_email')
+    durable: bool = Field('True')
 
     class Config:
-        env_prefix = "rabbit_send_email_queue"
+        env_prefix = "rabbit_send_email_"
+        env_nested_delimeter = "_"
 
 class RabbitBackgroundConfig(RabbitConfig):
-    exchange: str = Field('group_chunk', env='RABBIT_CHUNK_QUEUE_EXCHANGE')
-    exchange_type: str = Field('direct', env='RABBIT_CHUNK_QUEUE_EXCHANGE_TYPE')
-    queue: str = Field('group_chunk', env='RABBIT_CHUNK_QUEUE')
-    durable: str = Field('True', env='RABBIT_CHUNK_QUEUE_DURABLE')
+    exchange: str = Field('group_chunk')
+    exchange_type: str = Field('direct')
+    queue: str = Field('group_chunk')
+    durable: bool = Field('True')
 
     class Config:
-        env_prefix = "rabbit_chink_queue"
+        env_prefix = "rabbit_chunk_"
+        env_nested_delimeter = "_"
 
 class NotificationsConfig(BaseSettings):
-    notification_db_host: str = Field('db', env='BACKEND_DB_HOST')
-    notification_db_port: int = Field(5432, env='BACKEND_DB_PORT')
-    notification_db_user: str = Field('postgres', env='BACKEND_DB_USER')
-    notification_db_password: str = Field('1234', env='BACKEND_DB_PASSWORD')
-    notification_db_name: str = Field('notification', env='BACKEND_DB_NAME')
+    db_host: str = Field('db')
+    db_port: int = Field(5432)
+    db_user: str = Field('postgres')
+    db_password: str = Field('1234')
+    db_name: str = Field('notification')
 
-    from_email: str = Field('Practix "hello@practix.ru"', env='FROM_EMAIL')
+    from_email: str = Field('Practix "hello@practix.ru"')
     chunk_size: int = 50
     
     time_to_restart = 60
@@ -73,6 +76,10 @@ class NotificationsConfig(BaseSettings):
     mailhog_user = ''
     mailhog_password = ''
 
+    class Config:
+        env_prefix = "notifications_"
+        env_nested_delimeter = "_"
+
 class Config(BaseSettings):
     """Настройки приложения."""
 
@@ -81,6 +88,10 @@ class Config(BaseSettings):
     debug: bool = Field(default=True)
     loglevel: str = Field(default="DEBUG")
 
+    class Config:
+        env_prefix = "notifications_"
+        env_nested_delimeter = "_"
+
     kafka: KafkaConfig = KafkaConfig()
     auth_api: AuthAPIConfig = AuthAPIConfig()
     sentry: SentryConfig = SentryConfig()
@@ -88,7 +99,7 @@ class Config(BaseSettings):
     bg_worker: RabbitRealtimeConfig = RabbitRealtimeConfig()
     rt_worker: RabbitBackgroundConfig = RabbitBackgroundConfig()
     notifications: NotificationsConfig = NotificationsConfig()
-    
+
     def is_development(self) -> bool:
         return self.app_config == 'dev'
 

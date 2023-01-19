@@ -1,10 +1,10 @@
 # служба формирования запросов на выборку для подготовки рассылок и анализа данных
 # каждый воркер умеет запускать службу фоном для финалиной персонализации отправлений
-from jinja2 import Environment
+from functools import lru_cache
+from jinja2 import Template, Environment
 
 from lib.model.template import Template as TemplateModel
 
-from lib.api.v1.admin.notification import INotification
 from lib.api.v1.generator.template import ITemplate
 
 class JinjaService():
@@ -48,7 +48,7 @@ class JinjaService():
         return template.render(**context)
 
     def get_template(self, template_name: TemplateModel.name) -> Template:
-        template: Tempalte = None
+        template: Template = None
 
         if template_name == 'admin':
             template = self.environment.from_string(self.note_from_admin)

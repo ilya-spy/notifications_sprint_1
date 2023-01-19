@@ -1,47 +1,42 @@
 # Служба управления отложенными массовыми рассылками
 # Cлужба реализует методы для работы FastAPI и WebSocket - управляет настройками рассылок в БД
+from functools import lru_cache
 
-import logging
-from time import sleep
-
-from lib.api.v1.admin.notification import INotification
-from lib.api.v1.admin.user import IUserInfo
-from lib.config import config
+from lib.api.v1.admin.user import IUserInfo, IAdminInfo
 from lib.db.rabbitmq import RabbitMQ
-from lib.model.message import Context, Message
-from lib.service.admin import get_admin_notifications, get_admin_user
+
+from lib.service.userinfo import get_userinfo, get_admin_userinfo
 from lib.service.messages import get_background_queue
+from src.sender.sender import CommonSender
+
+from lib.config import config
+from lib.logger import get_logger
+
+logger = get_logger(__name__)
 
 
-def process(queue: RabbitMQ, user: IUserInfo, notifications: INotification):
-    try:
-        data = [{key: value for key, value in item.items()} for item in notifications]
+# Choose Background scenario
+queue: RabbitMQ = get_background_queue()
 
-        for item in data:
-            params = item.get("params")
-            context = Context(
-                group_id=params.get("group_id", None),
-                users_id=params.get("users_id", None),
-                payload=params.get("payload", {}),
-            )
-            message = Message(
-                type_send=item.get("title"),
-                context=context,
-                template_id=item.get("template_id"),
-                notification_id=item.get("id"),
-            )
-            logging.debug(message.dict())
-            queue.publish_channel(message.dict())
-    except Exception as e:
-        logging.error(e)
+# set background delay
+delay: int = config.notifications.time_to_restart
 
+@lru_cache
+def get_background_sender() -> CommonSender:
+    sender_userapi: IUserInfo = get_userinfo()
+    return CommonSender(
+        queue=queue,
+        userid=None,
+        userapi=sender_userapi,
+        sleeptime=delay
+    )
 
-if __name__ == "__main__":
-    # Choose Background
-    queue = get_background_queue()
-    user = get_admin_user()
-    notes = get_admin_notifications()
-
-    while True:
-        process(queue, user, notes)
-        sleep(config.notifications.time_to_restart)
+@lru_cache
+def get_admin_background_sender() -> CommonSender:
+    sender_userapi: IAdminInfo = get_admin_userinfo()
+    return CommonSender(
+        queue=queue,
+        userid=sender_userapi.get_admin_id(),
+        userapi=sender_userapi,
+        sleeptime=delay
+    )
