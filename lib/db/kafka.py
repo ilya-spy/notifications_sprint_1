@@ -7,7 +7,7 @@ from functools import lru_cache
 from aiokafka import AIOKafkaProducer  # type: ignore
 from aiokafka import AIOKafkaConsumer  # type: ignore
 
-from core.config import config
+from lib.config import config
 
 
 @lru_cache

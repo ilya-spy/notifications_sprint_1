@@ -33,6 +33,10 @@
 `make notifications\dev\setup`  
 `make notifications\dev\teardown`  
 
+Настройка стенда api notifications:  
+1. `make frontend\dev\setup`  -> start  
+2. `make frontend\dev\teardown`  -> finish
+
 Настройка стенда worker:  
 1. `make worker\dev\setup`  -> start  
 2. `make worker\mailer` -> login  

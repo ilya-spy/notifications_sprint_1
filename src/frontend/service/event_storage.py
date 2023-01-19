@@ -3,7 +3,7 @@ from functools import lru_cache
 from fastapi import Depends
 
 from models.event import KafkaEvent
-from db.kafka import get_kafka, AIOKafkaProducer
+from lib.db.kafka import get_kafka_producer, AIOKafkaProducer
 
 class EventStorageService:
     def __init__(self, kafka: AIOKafkaProducer):
@@ -17,6 +17,6 @@ class EventStorageService:
 
 @lru_cache()
 def get_event_storage_service(
-    kafka: AIOKafkaProducer = Depends(get_kafka),
+    kafka: AIOKafkaProducer = Depends(get_kafka_producer),
 ) -> EventStorageService:
     return EventStorageService(kafka)

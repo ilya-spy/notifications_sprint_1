@@ -2,7 +2,7 @@ import logging
 
 from functools import lru_cache
 
-from core.config import config  # type: ignore
+from lib.config import config  # type: ignore
 
 @lru_cache()
 def get_logger(name: str):

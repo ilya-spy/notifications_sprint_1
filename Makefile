@@ -24,12 +24,23 @@ help:
 notifications/dev/setup:
 	make admin/dev/setup
 	make worker/dev/setup
+	make frontend/dev/setup
 .PHONY: notifications/dev/setup
 
 notifications/prod/teardown:
 	make worker/dev/teardown
 	make admin/dev/teardown
+	make frontend/dev/teardow
 .PHONY: notifications/dev/teardown
+
+
+#
+# Команды развертывания и доступа в службы внешнего api notifications
+#
+admin/%: export DOCKER_DIR := devops/frontend
+
+admin/dev/%: export DOCKER_TARGET := dev
+admin/prod/%: export DOCKER_TARGET := prod
 
 
 #
