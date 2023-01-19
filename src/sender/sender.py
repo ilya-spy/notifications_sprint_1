@@ -28,7 +28,11 @@ class CommonSender():
         self.userid: uuid.UUID = userid
         self.sleeptime: int = sleeptime
 
-    def process(self, notifications: List[Notification]):
+    def connect(self):
+        self.queue.connect()
+        self.userapi.connect()
+
+    def process(self, notifications: List[Notification], payload: dict):
         try:
             for item in notifications:
                 note: Notification = item.dict()
@@ -37,9 +41,9 @@ class CommonSender():
                 context = Context(
                     group_id=note.groups,
                     users_id=[self.userid],
-                    payload={
-                        'user_groups': user.groups
-                    }
+                    payload=payload.update({
+                        'user_groups': user.groups,
+                    })
                 ),
                 message = Message(
                     type_send=note.type,
@@ -54,9 +58,9 @@ class CommonSender():
         except Exception as e:
             logger.error(e)
 
-    def schedule(self, notes: List[Notification]):
+    def schedule(self, notes: List[Notification], payload: dict):
         # process sending to queue
-        self.process(notes)
+        self.process(notes, payload)
         
         # blocking delay further requests here to control sender speed
         sleep(self.sleeptime)

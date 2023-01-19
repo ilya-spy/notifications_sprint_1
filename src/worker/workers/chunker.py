@@ -9,9 +9,9 @@ from lib.config import config
 from lib.db.rabbitmq import RabbitMQ
 from lib.logger import get_logger
 from lib.model.message import Context, Message, MessageBase, MessageChunk
-from lib.service.admin import AdminUserInfo
+from lib.service.userinfo import get_admin_userinfo, get_userinfo
 from lib.service.messages import get_background_queue, get_realtime_queue
-from lib.service.notifications import get_notifications
+from frontend.notifications import get_notifications
 from src.worker.workers.base import BaseWorker
 
 logger = get_logger(__name__)
@@ -116,9 +116,9 @@ if __name__ == "__main__":
         send_to = get_background_queue()
 
     if config.is_development():
-        userapi: IUserInfo = AdminUserInfo()
+        userapi: IUserInfo = get_admin_userinfo()
     if config.is_production():
-        userapi: IUserInfo = get_notifications()
+        userapi: IUserInfo = get_userinfo()
 
     # chunker that enriches background tasks and passes them to realtime
     worker: BaseWorker = UserChunkerWorker(

@@ -1,14 +1,12 @@
 import uuid
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from lib.api.v1.admin.notification import INotification
 from lib.model.notification import Notification
-from lib.model.user import User
 
 
-class IClientNotification(INotification):
+class IClientNotification(ABC):
     '''Client-side (users and services) interface to notifications'''
     @abstractmethod
     def connect(self) -> None:

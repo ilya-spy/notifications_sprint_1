@@ -32,7 +32,3 @@ class IAdminInfo(IUserInfo):
     @abstractmethod
     def get_admin_id(self):
         pass
-
-    @abstractmethod
-    def get_admin_userinfo(self):
-        pass

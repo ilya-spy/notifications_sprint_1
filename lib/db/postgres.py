@@ -7,7 +7,7 @@ from logger import get_logger
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from src.admin.notifications.models import Notification, Template
+from src.admin.notifications.models import Notification, Template, CustomUser
 
 logger = get_logger(__name__)
 
@@ -54,6 +54,13 @@ class NotificationsDb:
             .first()
         )
 
+    def get_notification(self, id):
+        return (
+            self.session.query(Notification)
+            .filter(Notification.id == id)
+            .first()
+        )
+
     def list_admin_notifications(self, id):
         return (
             self.session.query(Template)
@@ -63,8 +70,8 @@ class NotificationsDb:
 
     def list_client_notifications(self, id):
         return (
-            self.session.query(Template)
-            .filter(Template.id == id)
+            self.session.query(Notification)
+            .filter(Notification.id == id)
             .first()
         )
 
@@ -75,11 +82,18 @@ class NotificationsDb:
         self.session.add(task_notification)
         self.session.commit()
 
+    def get_user(self, user_id):
+        return (
+            self.session.query(CustomUser)
+            .filter(CustomUser.id == user_id)
+            .first()
+        )
+
     def get_users_from_group(self, group_id, limit, offset):
         return (
-            self.session.query(GroupNotificationUser)
-            .filter(GroupNotificationUser.notification_group_id == group_id)
-            .order_by(GroupNotificationUser.id)
+            self.session.query(CustomUser)
+            .filter(CustomUser.user_group == group_id)
+            .order_by(CustomUser.id)
             .limit(limit)
             .offset(offset)
             .all()
@@ -87,7 +101,7 @@ class NotificationsDb:
 
     def get_count_users_in_group(self, group_id):
         return (
-            self.session.query(GroupNotificationUser)
-            .filter(GroupNotificationUser.notification_group_id == group_id)
+            self.session.query(CustomUser)
+            .filter(CustomUser.user_group == group_id)
             .count()
         )

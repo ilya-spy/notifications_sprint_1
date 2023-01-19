@@ -10,11 +10,15 @@ from lib.config import config
 from lib.db.rabbitmq import RabbitMQ
 from lib.logger import get_logger
 from lib.model.message import Message
-from lib.service.admin import AdminNotifications, AdminUserInfo
+
+from lib.service.userinfo import get_userinfo, get_admin_userinfo
 from lib.service.jinja import get_templates
 from lib.service.messages import get_realtime_queue
-from lib.service.notifications import get_notifications
 from lib.service.smtp import EmailSMTPService
+
+from src.frontend.notifications import get_client_notifications_service
+from src.frontend.notifications import get_admin_notifications_service
+
 from src.generator.enricher import EnrichService
 from src.worker.service.policy import PolicyService
 from src.worker.workers.base import BaseWorker
@@ -114,12 +118,12 @@ if __name__ == "__main__":
     input_queue: RabbitMQ = get_realtime_queue()
 
     if config.is_development():
-        userapi: IUserInfo = AdminUserInfo()
-        notifications: INotification = AdminNotifications()
+        userapi: IUserInfo = get_admin_userinfo()
+        notifications: INotification = get_admin_notifications_service()
 
     if config.is_production():
-        userapi: IUserInfo = get_notifications()
-        notifications: INotification = get_notifications()
+        userapi: IUserInfo = get_userinfo()
+        notifications: INotification = get_client_notifications_service()
 
     worker: BaseWorker = MailerWorker(
         name=config.notifications.from_email,
