@@ -2,7 +2,6 @@ import uuid
 
 from abc import ABC, abstractmethod
 
-from lib.api.v1.admin.notification import INotification
 from lib.model.notification import Notification
 
 

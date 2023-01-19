@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      target: develop
+      args:
+        uid: ${HOST_UID}
+        gid: ${HOST_GID}
+    command: ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "--reload", "fastapi:app"]
+    ports:
+      - "8004:8000"
+    volumes:
+      - ../../../gate:/usr/src/app
